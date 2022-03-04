@@ -17,6 +17,7 @@ import utils
 import torch as t, torch.nn as nn, torch.nn.functional as tnnF, torch.distributions as tdist
 from torch.utils.data import DataLoader, Dataset
 import torchvision as tv, torchvision.transforms as tr
+import torch.multiprocessing as mp
 import os
 import sys
 import argparse
@@ -296,12 +297,12 @@ def main(args):
     for epoch in range(args.n_epochs):
         if epoch in args.decay_epochs:
             for param_group in optim.param_groups:
-                new_lr = param_group['lr'] * args.decay_rate
+                new_lr = param_group['lr'] * args.decay_rate * args.ngpus
                 param_group['lr'] = new_lr
             print("Decaying lr to {}".format(new_lr))
         for i, (x_p_d, _) in tqdm(enumerate(dload_train)):
             if cur_iter <= args.warmup_iters:
-                lr = args.lr * cur_iter / float(args.warmup_iters)
+                lr = args.lr * cur_iter / float(args.warmup_iters) * args.ngpus
                 for param_group in optim.param_groups:
                     param_group['lr'] = lr
 
@@ -439,6 +440,7 @@ if __name__ == "__main__":
     parser.add_argument("--reinit_freq", type=float, default=.05)
     parser.add_argument("--sgld_lr", type=float, default=1.0)
     parser.add_argument("--sgld_std", type=float, default=1e-2)
+    parser.add_argument('--ngpus', type=int, default=1)
     # logging + evaluation
     parser.add_argument("--save_dir", type=str, default='./experiment')
     parser.add_argument("--ckpt_every", type=int, default=10, help="Epochs between checkpoint save")
@@ -452,4 +454,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     args.n_classes = 100 if args.dataset == "cifar100" else 10
-    main(args)
+    
+    try:
+        mp.set_start_method("forkserver")
+        mp.spawn(main,
+                 args=(args.ngpus, args),
+                 nprocs=args.ngpus,
+                 join=True)
+    except Exception:
+        import traceback
+
+        logger.error(traceback.format_exc())
+        sys.exit(1)
+    
