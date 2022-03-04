@@ -288,21 +288,21 @@ def main(args):
     # optimizer
     params = f.class_output.parameters() if args.clf_only else f.parameters()
     if args.optimizer == "adam":
-        optim = t.optim.Adam(params, lr=args.lr, betas=[.9, .999], weight_decay=args.weight_decay)
+        optim = t.optim.Adam(params, lr=args.lr * args.ngpus, betas=[.9, .999], weight_decay=args.weight_decay)
     else:
-        optim = t.optim.SGD(params, lr=args.lr, momentum=.9, weight_decay=args.weight_decay)
+        optim = t.optim.SGD(params, lr=args.lr * args.ngpus, momentum=.9, weight_decay=args.weight_decay)
 
     best_valid_acc = 0.0
     cur_iter = 0
     for epoch in range(args.n_epochs):
         if epoch in args.decay_epochs:
             for param_group in optim.param_groups:
-                new_lr = param_group['lr'] * args.decay_rate * args.ngpus
+                new_lr = param_group['lr'] * args.decay_rate
                 param_group['lr'] = new_lr
             print("Decaying lr to {}".format(new_lr))
         for i, (x_p_d, _) in tqdm(enumerate(dload_train)):
             if cur_iter <= args.warmup_iters:
-                lr = args.lr * cur_iter / float(args.warmup_iters) * args.ngpus
+                lr = args.lr * cur_iter / float(args.warmup_iters)
                 for param_group in optim.param_groups:
                     param_group['lr'] = lr
 
