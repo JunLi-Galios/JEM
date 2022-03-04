@@ -18,6 +18,7 @@ import torch as t, torch.nn as nn, torch.nn.functional as tnnF, torch.distributi
 from torch.utils.data import DataLoader, Dataset
 import torchvision as tv, torchvision.transforms as tr
 import torch.multiprocessing as mp
+import torch.distributed as dist
 import os
 import sys
 import argparse
