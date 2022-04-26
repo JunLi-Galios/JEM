@@ -25,6 +25,8 @@ python train_wrn_ebm.py --lr .0001 --dataset cifar10 --optimizer adam --p_x_weig
 To evaluate the classifier (on CIFAR10):
 ```markdown
 python eval_wrn_ebm.py --load_path /PATH/TO/YOUR/MODEL.pt --eval test_clf --dataset cifar_test
+base line 0.28253707 0.9268
+
 ```
 To do OOD detection (on CIFAR100)
 ```markdown
